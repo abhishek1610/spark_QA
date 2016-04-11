@@ -29,7 +29,7 @@ object sparketlQA {
     val feildtype = new Array[String](5)
      feildtype(0) = "String"
      feildtype(1) = "String"
-    feildtype(2)  = "int"
+    feildtype(2)  = "String"
 
     val feild : Array[DataType] = feildtype.filter( x => x != null).map( x =>  Stringtodatatype(x))
 
@@ -56,20 +56,25 @@ object sparketlQA {
   val test = inp.map(feild => Row.fromSeq(feild.split(",")))
     val inp1 = sqlContext1.createDataFrame(test,schema )
     //.map{x =>(x._1, x._2, x._3, x._4, x._5, x._6, x._7)  }//.toDF()
-
+    inp1.printSchema();
    inp1.show()
-  inp1.registerTempTable("test")
-   sqlContext1.sql("CREATE TABLE new_test row format delimited fields terminated by '|' " +
-      "STORED AS RCFile AS select id,name,age from test where id=1" )
+  /*inp1.registerTempTable("test")
+   /*sqlContext1.sql("CREATE TABLE new_test row format delimited fields terminated by ',' " +
+      "STORED AS Textfile AS select id,name,age from test " ) */
+    sqlContext1.sql("CREATE TABLE new_test " +
+      " AS select id,name,age from test " )
 
     sqlContext1.sql("CREATE TABLE new_test_target " +
-      " AS select id,name,age from test where id=1" )
+      " AS select id,name,age from test " )  */
 
 
-    val m1 = Map[String, String]("1"->"2", "2"->"3", "4"->"50")
-
+    val m1 = Map[String, String]("id"->"id", "name"->"name", "age"->"age")
+    val src = sqlContext1.sql("Select * from new_test")
+    val tgt = sqlContext1.sql("Select * from new_test_target")
     val qry_comp = new compare()
-    val out= qry_comp.comparequery(m1,"2")
+    src.show()
+    tgt.show()
+    val out= qry_comp.comparequery(m1,"2",src,tgt)
     System.out.println(out)
 
     }
