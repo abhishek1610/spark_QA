@@ -22,14 +22,17 @@ class compare extends Serializable {
      i=  i +1
 
      }
-
-    val src_tgt_feilds : Array[Tuple2[String,String]] = Array(("id","id"),("name","name"))
+    val tgt_feilds = Array("id" ,"name","age")
+    val src_tgt_feilds : Array[Tuple2[String,String]] = Array(("id","id_1"),("name","name_1"))
   //return join_qry+qry
   val src1 = src.as("A")
     val tgt1 = tgt.as("B")
 
+  //Below hack to make the join work we have to renme tgt cols just in case tgt and source column matches
+    //not required from spark 1.3
+    val tgt1_new = tgt1.select(tgt_feilds.map{x => tgt1(x).as(x+"_1")} : _*)
     //src_tgt_feilds.map {x => src1(x._1) === tgt1(x._2)}.reduce(_ && _)
-   val out = src1.join( tgt1 ,src1("age") === tgt1("age") , "inner"  ).select(src("id"))
+   val out = src1.join( tgt1_new ,src_tgt_feilds.map { x => src1(x._1) === tgt1_new(x._2) }.reduce(_ && _) , "inner"  ).select(src("id"))
     out
 
   }
