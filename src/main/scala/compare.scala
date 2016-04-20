@@ -1,11 +1,12 @@
-import org.apache.spark.sql.DataFrame
+import org.apache.spark.sql.hive.HiveContext
+import org.apache.spark.sql.{SQLContext, DataFrame}
 
 /**
  * Created by abhishek on 2016-04-10.
  */
-class compare extends Serializable {
+class compare  {
 
-  def comparequery(S2T : Map[String,String] , key: String, src : DataFrame, tgt : DataFrame ): DataFrame =
+  def comparequery(S2T : Map[String,String] , key: String, src : DataFrame, tgt : DataFrame,sqlcontext1 : HiveContext ): DataFrame =
   {
     val m1 = S2T
     val src_key = key
@@ -22,18 +23,23 @@ class compare extends Serializable {
      i=  i +1
 
      }
-    val tgt_feilds = Array("id" ,"name","age")
-    val src_tgt_feilds : Array[Tuple2[String,String]] = Array(("id","id_1"),("name","name_1"))
+    val tgt_feilds = Array("id")
+    val src_tgt_feilds : Array[Tuple2[String,String]] = Array(("id","id1"))
+    val compare_col : Array[Tuple2[String,String]] = Array(("name","name1"), ("age","age1"))
   //return join_qry+qry
-  val src1 = src.as("A")
-    val tgt1 = tgt.as("B")
+  val src1 = src.registerTempTable("src")
+    val tgt1 = tgt.registerTempTable("tgt")
+   // tgt.printSchema()
+    //below is supported from Spark 1.3.1
+//  val tgt1 = tgt.select(tgt_feilds.map {x => src(x).as(x+ "1")} :_*)
 
-  //Below hack to make the join work we have to renme tgt cols just in case tgt and source column matches
-    //not required from spark 1.3
-    val tgt1_new = tgt1.select(tgt_feilds.map{x => tgt1(x).as(x+"_1")} : _*)
-    //src_tgt_feilds.map {x => src1(x._1) === tgt1(x._2)}.reduce(_ && _)
-   val out = src1.join( tgt1_new ,src_tgt_feilds.map { x => src1(x._1) === tgt1_new(x._2) }.reduce(_ && _) , "inner"  ).select(src("id"))
-    out
+    //val out = src1.join( tgt1 ,src_tgt_feilds.map { x => src1(x._1) === tgt1(x._2) }.reduce(_ && _) , "inner"  )
+    // .where(compare_col.map { x => src1(x._1) !== tgt1(x._2) }.reduce(_ || _))
+    //  .select(src1("id"),tgt("id1"))
+   // out
+   val out1 = sqlcontext1.sql("select id , concat(id,tgt.name) from src inner join tgt on src.id=tgt.id1")
+
+out1
 
   }
 
